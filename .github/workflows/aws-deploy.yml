@@ -8,7 +8,7 @@ on:
 env:
   BACKEND_REPO: tech-test-backend
   FRONTEND_REPO: tech-test-frontend
-  BACKEND_URL: "https://xxxxxx.eu-west-3.awsapprunner.com" 
+  BACKEND_URL: "https://y2nhrtgr9z.eu-west-3.awsapprunner.com" 
 
 jobs:
   deploy:
