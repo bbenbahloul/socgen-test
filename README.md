@@ -16,6 +16,56 @@ A fully containerized application deployed to AWS App Runner with a complete CI/
 *   **Backend API:** `https://jpk6h6z7ge.eu-west-3.awsapprunner.com/api/message`
 *   **Health Check:** `https://jpk6h6z7ge.eu-west-3.awsapprunner.com/health`
 
+## Folder Structure
+
+This repository is organized as a monorepo to maintain the link between infrastructure and application code.
+
+    .
+    ├── .github/workflows/          # CI/CD Pipeline definitions
+    │   ├── aws-deploy.yml          # Automated Build & Deploy (Main Branch)
+    │   └── terraform-apply.yml     # Manual Infrastructure provisioning
+    ├── backend/                    # Node.js Express API
+    │   ├── src/                    # API Logic & Routes
+    │   ├── Dockerfile              # Backend containerization
+    │   └── package.json            # Backend dependencies
+    ├── frontend/                   # React (Vite) Application
+    │   ├── src/                    # UI Components & Logic
+    │   ├── public/                 # Static assets
+    │   ├── Dockerfile              # Multi-stage build (Node -> Nginx)
+    │   └── package.json            # Frontend dependencies
+    ├── terraform/                  # Infrastructure as Code (IaC)
+    │   ├── main.tf                 # Primary AWS resource definitions
+    │   ├── variables.tf            # Configurable parameters
+    │   └── outputs.tf              # Values exported for CI/CD use
+    ├── load-test/                  # Performance & Scalability testing
+    │   ├── script.js               # k6 test scenarios
+    │   └── results/                # Screenshots of scaling events
+    ├── docker-compose.yml          # Local orchestration
+    └── README.md                   # Project documentation
+
+---
+
+## Technical Deep Dive: Component Breakdown
+
+### Infrastructure (`/terraform`)
+*   **Provider Logic:** Configured for AWS region `eu-west-3` (Paris).
+*   **State Management:** Uses an S3 Backend to ensure Terraform state is preserved between GitHub Action runs.
+*   **Resources:** Provisions ECR repositories for image storage and App Runner services for serverless execution.
+
+### Backend API (`/backend`)
+*   **Engine:** Node.js with Express.
+*   **Containerization:** Uses a lightweight `node:alpine` base image to minimize deployment time and security surface area.
+*   **Observability:** Integrated with `morgan` for structured HTTP logging and health check endpoints.
+
+### Frontend UI (`/frontend`)
+*   **Framework:** React (Vite) for modern, fast development.
+*   **Production Serving:** The Docker container uses a multi-stage build. It compiles the React code and then copies the static output to an **Nginx** server, which handles public traffic on Port 80.
+*   **Environment Injection:** The API URL is injected at build-time using `VITE_` prefixed variables, allowing the UI to connect to the dynamically generated App Runner backend.
+
+### Load Testing (`/load-test`)
+*   **Tooling:** k6 (Go-based load generator).
+*   **Goal:** Simulates high-concurrency traffic to validate the App Runner Auto-Scaling configuration.
+
 ---
 
 ## How to Run Locally
@@ -90,7 +140,7 @@ The test utilized **200 Virtual Users (VUs)** with zero sleep delay, hammering t
 
 ---
 
-## 📊 Observability: Logs & Metrics
+## Observability: Logs & Metrics
 
 The application is integrated with **Amazon CloudWatch** to provide deep visibility into system health, performance, and scaling events.
 
@@ -117,7 +167,7 @@ The most critical metric for this project is **Concurrency**.
 
 ---
 
-## 🛠️ Troubleshooting Guide
+## Troubleshooting Guide
 
 If the application is not behaving as expected, follow these steps:
 
