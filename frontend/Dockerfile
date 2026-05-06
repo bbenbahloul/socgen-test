@@ -4,13 +4,16 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
-# We can pass build arguments here later for API URLs
+
+# --- ADD THESE TWO LINES ---
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
+# ---------------------------
+
 RUN npm run build
 
 # Stage 2: Serve with Nginx
 FROM nginx:alpine
-# Copy the built assets from the builder stage
 COPY --from=builder /app/dist /usr/share/nginx/html
-# Expose port 80
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]

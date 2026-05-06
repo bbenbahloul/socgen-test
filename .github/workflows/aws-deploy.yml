@@ -1,0 +1,52 @@
+name: AWS CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  BACKEND_REPO: tech-test-backend
+  FRONTEND_REPO: tech-test-frontend
+  BACKEND_URL: "https://xxxxxx.eu-west-3.awsapprunner.com" 
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # Neat trick: Create the ECR repositories if they don't exist yet
+      - name: Ensure ECR Repositories Exist
+        run: |
+          aws ecr create-repository --repository-name $BACKEND_REPO || true
+          aws ecr create-repository --repository-name $FRONTEND_REPO || true
+
+      - name: Build, tag, and push Backend to ECR
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          cd backend
+          docker build -t $REGISTRY/$BACKEND_REPO:latest .
+          docker push $REGISTRY/$BACKEND_REPO:latest
+
+      - name: Build, tag, and push Frontend to ECR
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          cd frontend
+          # Pass the backend URL into the React build!
+          docker build --build-arg VITE_API_URL=${{ env.BACKEND_URL }} -t $REGISTRY/$FRONTEND_REPO:latest .
+          docker push $REGISTRY/$FRONTEND_REPO:latest
