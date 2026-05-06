@@ -5,6 +5,11 @@ terraform {
       version = "~> 5.0"
     }
   }
+  backend "s3" {
+    bucket = "tech-test-tfstate-bbenbahloul"
+    key    = "tech-test/terraform.tfstate"
+    region = "eu-west-3"                     
+  }
 }
 
 # ==========================================
