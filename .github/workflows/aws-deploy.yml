@@ -8,7 +8,7 @@ on:
 env:
   BACKEND_REPO: tech-test-backend
   FRONTEND_REPO: tech-test-frontend
-  BACKEND_URL: "https://y2nhrtgr9z.eu-west-3.awsapprunner.com" 
+  # BACKEND_URL removed from here! We will fetch it dynamically below.
 
 jobs:
   deploy:
@@ -24,11 +24,31 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
+      # ==========================================
+      # DYNAMICALLY FETCH URL FROM TERRAFORM
+      # ==========================================
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Get Backend URL from Terraform State
+        working-directory: ./infra
+        run: |
+          # 1. Initialize Terraform (this pulls your state file from S3)
+          terraform init
+          
+          # 2. Extract the exact URL from the Terraform outputs
+          DYNAMIC_URL=$(terraform output -raw backend_url)
+          
+          # 3. Inject it into GitHub's environment variables for later steps
+          echo "BACKEND_URL=$DYNAMIC_URL" >> $GITHUB_ENV
+          
+          # Print it to the logs so you can verify it worked
+          echo "Successfully retrieved Backend URL: $DYNAMIC_URL"
+
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      # Neat trick: Create the ECR repositories if they don't exist yet
       - name: Ensure ECR Repositories Exist
         run: |
           aws ecr create-repository --repository-name $BACKEND_REPO || true
@@ -47,6 +67,5 @@ jobs:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
           cd frontend
-          # Pass the backend URL into the React build!
           docker build --build-arg VITE_API_URL=${{ env.BACKEND_URL }} -t $REGISTRY/$FRONTEND_REPO:latest .
           docker push $REGISTRY/$FRONTEND_REPO:latest
