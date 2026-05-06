@@ -1,14 +1,18 @@
 const express = require('express');
 const cors = require('cors');
+const morgan = require('morgan');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
 
 // Middleware
-app.use(cors()); // Allows your React app to make requests here
+app.use(cors());
 app.use(express.json());
 
-// 1. Health Check Endpoint (Required for Cloud Deployment)
+// Add structured logging for visibility (Crucial for production!)
+app.use(morgan('combined'));
+
+// 1. Health Check Endpoint
 app.get('/health', (req, res) => {
     res.status(200).json({ status: 'healthy', timestamp: new Date().toISOString() });
 });
@@ -18,6 +22,6 @@ app.get('/api/message', (req, res) => {
     res.json({ message: 'Hello from the Express Backend!' });
 });
 
-app.listen(PORT, '0.0.0.0', () => { // 0.0.0.0 is required for Docker
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`Backend server is running on port ${PORT}`);
 });
