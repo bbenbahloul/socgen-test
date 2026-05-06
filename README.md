@@ -66,6 +66,8 @@ This repository is organized as a monorepo to maintain the link between infrastr
 *   **Tooling:** k6 (Go-based load generator).
 *   **Goal:** Simulates high-concurrency traffic to validate the App Runner Auto-Scaling configuration.
 
+**Security Note:** The Terraform backend configuration is committed to track the state location. However, the S3 bucket is configured with private-only access, and all sensitive credentials are provided dynamically via GitHub Actions secrets, never stored in the codebase.
+
 ---
 
 ## How to Run Locally
