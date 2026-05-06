@@ -90,6 +90,41 @@ The test utilized **200 Virtual Users (VUs)** with zero sleep delay, hammering t
 
 ---
 
+## 📊 Observability: Logs & Metrics
+
+The application is integrated with **Amazon CloudWatch** to provide deep visibility into system health, performance, and scaling events.
+
+### 1. Application Logs (Distributed Tracing)
+Every request processed by the backend is captured and streamed to CloudWatch Logs. 
+*   **Structured Logging:** The Node.js backend utilizes `morgan` to log standard HTTP metadata (Method, Path, Status Code, Response Time).
+*   **Error Tracking:** Any uncaught exceptions or 500-series errors are automatically captured in the log stream for rapid debugging.
+*   **Accessing Logs:** 
+    1. Navigate to the **App Runner Service** in the AWS Console.
+    2. Click on the **Logs** tab.
+    3. View the **Service Logs** (deployment/health check events) or **Application Logs** (live traffic output).
+
+### 2. Performance Metrics
+AWS App Runner provides real-time telemetry used to monitor the "Pulse" of the application:
+*   **RequestCount:** Total number of requests over a specific period. (Observed during the k6 test reaching ~5,000 req/s).
+*   **ActiveInstances:** A real-time count of container instances currently serving traffic. 
+*   **RequestLatency:** The time taken for the service to respond to requests (Median and p95).
+
+### 3. Scaling Metrics (The "Heartbeat")
+The most critical metric for this project is **Concurrency**. 
+*   **Metric Name:** `Concurrency` (Active connections per instance).
+*   **Threshold:** When the average concurrency exceeds **20**, the App Runner Auto-Scaling configuration triggers a scale-out event.
+*   **Verification:** This can be visualized in the **Monitoring** tab under "Active Instances" vs "Request Count."
+
+---
+
+## 🛠️ Troubleshooting Guide
+
+If the application is not behaving as expected, follow these steps:
+
+1. **Check Health Status:** Verify that the "Service Status" in App Runner is `Running`. If it is `Degraded`, check the **Service Logs** for failing health checks.
+2. **Review Deployment Logs:** If a GitHub Action deployment fails, check the logs to see if the container failed to start or if there was a `VPC_CONNECTOR` configuration error.
+3. **Trace API Errors:** Search the **Application Logs** for `5XX` status codes to identify backend crashes or timeout issues.
+
 ## Known Limitations and Possible Improvements
 
 1.  **Migration to ECS:** Transitioning infrastructure to ECS Fargate for long-term AWS support.
